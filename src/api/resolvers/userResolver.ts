@@ -39,7 +39,7 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
-  @Mutation(() => User)
+  @Mutation(() => UserResponse)
   async registerUser(
     @Arg("details") details: UsernamePasswordType,
     @Ctx() { connection }: any
@@ -48,7 +48,23 @@ export class UserResolver {
     const user = new User();
     user.username = details.username;
     user.password = await argon2.hash(details.password);
-    return await userRepo.save(user);
+    try {
+      return {
+        user: await userRepo.save(user),
+      };
+    } catch (err) {
+      if (err.code === "23505") {
+        return {
+          error: [
+            {
+              property: "username",
+              message: "Username already exists",
+            },
+          ],
+        };
+      }
+    }
+    return {};
   }
 
   @Mutation(() => UserResponse)
