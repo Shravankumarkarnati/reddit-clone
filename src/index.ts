@@ -1,3 +1,4 @@
+import { UserResolver } from "./api/resolvers/userResolver";
 import "reflect-metadata";
 import { PostResolver } from "./api/resolvers/postResolver";
 import { createConnection } from "typeorm";
@@ -15,7 +16,7 @@ createConnection()
 
     const graphQLServer = new ApolloServer({
       schema: await buildSchema({
-        resolvers: [HelloResolver, PostResolver],
+        resolvers: [HelloResolver, PostResolver, UserResolver],
         validate: false,
       }),
       context: () => ({ connection }),
