@@ -1,3 +1,4 @@
+import { Field, Int, ObjectType } from "type-graphql";
 import {
   Column,
   CreateDateColumn,
@@ -7,14 +8,18 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 
+@ObjectType()
 @Entity()
 export class Post {
+  @Field(() => Int)
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Field(() => String)
   @Column()
   title: String;
 
+  @Field(() => String)
   @CreateDateColumn({
     name: "created_at",
     type: "timestamp",
@@ -22,6 +27,7 @@ export class Post {
   })
   "created_at": Timestamp;
 
+  @Field(() => String)
   @UpdateDateColumn({
     name: "updated_at",
     type: "timestamp",
