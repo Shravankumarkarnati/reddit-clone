@@ -1,3 +1,4 @@
+import { MyContext } from "./../../utils/types/MyContext";
 import { User } from "./../../database/entity/user";
 import {
   Arg,
@@ -6,6 +7,7 @@ import {
   InputType,
   Mutation,
   ObjectType,
+  Query,
   Resolver,
 } from "type-graphql";
 
@@ -39,18 +41,51 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() { req, connection }: MyContext) {
+    if (req.session?.userId) {
+      return await connection.getRepository(User).findOne(req.session.userId);
+    } else {
+      return null;
+    }
+  }
+
   @Mutation(() => UserResponse)
   async registerUser(
     @Arg("details") details: UsernamePasswordType,
-    @Ctx() { connection }: any
-  ) {
+    @Ctx() { connection, req }: MyContext
+  ): Promise<UserResponse> {
+    if (details.username.length < 3) {
+      return {
+        error: [
+          {
+            property: "username",
+            message: "Username Length cannot be less than 3",
+          },
+        ],
+      };
+    }
+    if (details.password.length < 3) {
+      return {
+        error: [
+          {
+            property: "password",
+            message: "Password Length cannot be less than 3",
+          },
+        ],
+      };
+    }
     const userRepo = await connection.getRepository(User);
     const user = new User();
     user.username = details.username;
     user.password = await argon2.hash(details.password);
     try {
+      const createdUser = await userRepo.save(user);
+      if (req.session) {
+        req.session.userId = createdUser.id;
+      }
       return {
-        user: await userRepo.save(user),
+        user: createdUser,
       };
     } catch (err) {
       if (err.code === "23505") {
@@ -70,15 +105,20 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async loginUser(
     @Arg("details") details: UsernamePasswordType,
-    @Ctx() { connection }: any
+    @Ctx() { connection, req }: MyContext
   ): Promise<UserResponse> {
     const userRepo = await connection.getRepository(User);
     const user = await userRepo.findOne({ username: details.username });
     if (user) {
-      const valid = await argon2.verify(user.password, details.password);
+      const valid = await argon2.verify(
+        user.password as string,
+        details.password
+      );
       if (valid) {
+        if (req.session) {
+          req.session.userId = user.id;
+        }
         return {
-          error: [],
           user: user,
         };
       } else {
@@ -93,5 +133,19 @@ export class UserResolver {
         ],
       };
     }
+  }
+
+  @Mutation(() => Boolean)
+  async logoutUser(@Ctx() { req, res }: MyContext): Promise<Boolean> {
+    return new Promise((response) => {
+      req.session?.destroy((err) => {
+        if (err) {
+          response(false);
+        } else {
+          res.clearCookie("sid");
+          response(true);
+        }
+      });
+    });
   }
 }
