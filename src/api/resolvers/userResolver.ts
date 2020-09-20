@@ -1,5 +1,5 @@
-import { MyContext } from "./../../utils/types/MyContext";
-import { User } from "./../../database/entity/user";
+import argon2 from "argon2";
+import { validationErrorCodes } from "../../utils/validations/helpers";
 import {
   Arg,
   Ctx,
@@ -10,16 +10,29 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
-
-import argon2 from "argon2";
+import { User } from "./../../database/entity/user";
+import { MyContext } from "./../../utils/types/MyContext";
+import { checker } from "./../../utils/validations/checks";
 
 @InputType()
-class UsernamePasswordType {
+export class detailsType {
   @Field()
   username: string;
 
   @Field()
   password: string;
+
+  @Field()
+  email: string;
+}
+
+@InputType()
+export class loginUserType {
+  @Field()
+  username!: string;
+
+  @Field()
+  password!: string;
 }
 
 @ObjectType()
@@ -27,11 +40,11 @@ class SignError {
   @Field()
   property: string;
   @Field()
-  message: string;
+  errorCode: number;
 }
 
 @ObjectType()
-class UserResponse {
+export class UserResponse {
   @Field(() => [SignError], { nullable: true })
   error?: SignError[];
 
@@ -52,59 +65,31 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async registerUser(
-    @Arg("details") details: UsernamePasswordType,
+    @Arg("details") details: detailsType,
     @Ctx() { connection, req }: MyContext
   ): Promise<UserResponse> {
-    if (details.username.length < 3) {
-      return {
-        error: [
-          {
-            property: "username",
-            message: "Username Length cannot be less than 3",
-          },
-        ],
-      };
+    const validation = await checker(connection, details);
+
+    if (validation.error) {
+      return validation;
     }
-    if (details.password.length < 3) {
-      return {
-        error: [
-          {
-            property: "password",
-            message: "Password Length cannot be less than 3",
-          },
-        ],
-      };
-    }
-    const userRepo = await connection.getRepository(User);
+    const userRepo = connection.getRepository(User);
     const user = new User();
     user.username = details.username;
+    user.email = details.email;
     user.password = await argon2.hash(details.password);
-    try {
-      const createdUser = await userRepo.save(user);
-      if (req.session) {
-        req.session.userId = createdUser.id;
-      }
-      return {
-        user: createdUser,
-      };
-    } catch (err) {
-      if (err.code === "23505") {
-        return {
-          error: [
-            {
-              property: "username",
-              message: "Username already exists",
-            },
-          ],
-        };
-      }
+    const createdUser = await userRepo.save(user);
+    if (req.session) {
+      req.session.userId = createdUser.id;
     }
-    return {};
+    return {
+      user: createdUser,
+    };
   }
 
   @Mutation(() => UserResponse)
   async loginUser(
-    @Arg("details") details: UsernamePasswordType,
+    @Arg("details") details: loginUserType,
     @Ctx() { connection, req }: MyContext
   ): Promise<UserResponse> {
     const userRepo = await connection.getRepository(User);
@@ -123,13 +108,21 @@ export class UserResolver {
         };
       } else {
         return {
-          error: [{ property: "password", message: "Incorrect Password" }],
+          error: [
+            {
+              property: "password",
+              errorCode: validationErrorCodes.inCorrectPassword,
+            },
+          ],
         };
       }
     } else {
       return {
         error: [
-          { property: "username", message: "That username doesnt exist" },
+          {
+            property: "username",
+            errorCode: validationErrorCodes.usernameDoesntExist,
+          },
         ],
       };
     }

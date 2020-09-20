@@ -21,7 +21,7 @@ export class User {
     type: "timestamp",
     default: () => "CURRENT_TIMESTAMP",
   })
-  "created_at": Timestamp;
+  "created_at"!: Timestamp;
 
   @Field(() => String)
   @UpdateDateColumn({
@@ -29,7 +29,7 @@ export class User {
     type: "timestamp",
     default: () => "CURRENT_TIMESTAMP",
   })
-  "updated_at": Timestamp;
+  "updated_at"!: Timestamp;
 
   @Field(() => String)
   @Column({ unique: true })
@@ -37,4 +37,8 @@ export class User {
 
   @Column()
   password!: String;
+
+  @Field(() => String)
+  @Column({ unique: true })
+  email!: String;
 }
