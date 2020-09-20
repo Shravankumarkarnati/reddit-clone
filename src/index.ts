@@ -7,7 +7,7 @@ import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 import { HelloResolver } from "./api/resolvers/helloResolver";
 import session from "express-session";
-import redis from "redis";
+import Redis from "ioredis";
 import redisConnect from "connect-redis";
 import cors from "cors";
 // import morgan from "morgan";
@@ -16,11 +16,10 @@ createConnection()
   .then(async (connection) => {
     await connection.runMigrations();
     console.log("db connected");
-
     const app = express();
 
     const RedisStore = redisConnect(session);
-    const redisClient = redis.createClient();
+    const redisClient = new Redis();
 
     app.use(
       cors({
@@ -52,7 +51,7 @@ createConnection()
         resolvers: [HelloResolver, PostResolver, UserResolver],
         validate: false,
       }),
-      context: ({ req, res }) => ({ connection, req, res }),
+      context: ({ req, res }) => ({ connection, req, res, redisClient }),
     });
 
     graphQLServer.applyMiddleware({ app, cors: false });

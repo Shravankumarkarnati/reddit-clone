@@ -30,17 +30,18 @@ export const passwordValid = (password: string): Boolean => {
 
 // format errors => single digit
 // already exists => double digit
-// username doesnot exist => triple digit
-// incorrect password => four digit
+// incorrect username or password => triple digit
 
 export const validationErrorCodes = {
   usernameFormatError: 5,
   passwordFormatError: 7,
+  uuidExpired: 8,
+  confirmPasswordNotSame: 9,
 
-  usernameExistsError: 15,
-  emailExistsError: 17,
+  usernameExistsError: 55,
+  emailExistsError: 77,
 
-  usernameDoesntExist: 555,
-
-  inCorrectPassword: 7777,
+  incorrectUsername: 555,
+  inCorrectPassword: 777,
+  inCorrectEmail: 999,
 };

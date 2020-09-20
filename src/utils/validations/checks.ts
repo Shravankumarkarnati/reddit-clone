@@ -1,14 +1,9 @@
 import { Connection } from "typeorm";
 import { UserResponse, detailsType } from "./../../api/resolvers/userResolver";
 import { User } from "../../database/entity/user";
-import {
-  usernameValid,
-  passwordValid,
-  //   emailValid,
-  validationErrorCodes,
-} from "./helpers";
+import { usernameValid, passwordValid, validationErrorCodes } from "./helpers";
 
-export const checker = async (
+export const registerChecker = async (
   connection: Connection,
   details: detailsType
 ): Promise<UserResponse> => {
@@ -39,16 +34,6 @@ export const checker = async (
       ],
     };
   }
-  //   if (!emailValid(details.password)) {
-  //     return {
-  //       error: [
-  //         {
-  //           property: "email",
-  //           errorCode: validationErrorCodes.emailFormatError,
-  //         },
-  //       ],
-  //     };
-  //   }
   if (!usernameValid(details.username)) {
     return {
       error: [
