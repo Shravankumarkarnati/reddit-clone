@@ -1,8 +1,10 @@
+import { Post } from "./post";
 import { Field, Int, ObjectType } from "type-graphql";
 import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   Timestamp,
   UpdateDateColumn,
@@ -14,6 +16,21 @@ export class User {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
   id!: number;
+
+  @Field(() => String)
+  @Column({ unique: true })
+  username!: String;
+
+  @Column()
+  password!: String;
+
+  @Field(() => String)
+  @Column({ unique: true })
+  email!: String;
+
+  @Field(() => String)
+  @OneToMany(() => Post, (post) => post.postOwner)
+  posts: Post[];
 
   @Field(() => String)
   @CreateDateColumn({
@@ -30,15 +47,4 @@ export class User {
     default: () => "CURRENT_TIMESTAMP",
   })
   "updated_at"!: Timestamp;
-
-  @Field(() => String)
-  @Column({ unique: true })
-  username!: String;
-
-  @Column()
-  password!: String;
-
-  @Field(() => String)
-  @Column({ unique: true })
-  email!: String;
 }

@@ -1,8 +1,10 @@
+import { User } from "../entity/user";
 import { Field, Int, ObjectType } from "type-graphql";
 import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   PrimaryGeneratedColumn,
   Timestamp,
   UpdateDateColumn,
@@ -13,11 +15,26 @@ import {
 export class Post {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Field(() => String)
   @Column()
-  title: String;
+  title!: String;
+
+  @Field(() => String)
+  @Column()
+  post!: String;
+
+  @Field(() => Number)
+  @Column()
+  postOwnerId!: Number;
+
+  @ManyToOne(() => User, (user) => user.posts)
+  postOwner!: User;
+
+  @Field(() => Number)
+  @Column({ default: 0 })
+  points!: Number;
 
   @Field(() => String)
   @CreateDateColumn({
