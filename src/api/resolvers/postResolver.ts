@@ -24,9 +24,20 @@ export class PostInputType {
 @Resolver()
 export class PostResolver {
   @Query(() => [Post])
-  async posts(@Ctx() { connection }: MyContext): Promise<Post[]> {
-    const postsRepo = await connection.getRepository(Post);
-    return postsRepo.find();
+  async posts(
+    @Arg("limit", () => Number) limit: number,
+    @Ctx() { connection }: MyContext,
+    @Arg("cursor", { defaultValue: new Date() }) cursor?: string
+  ): Promise<Post[]> {
+    const timestamp = cursor ? cursor : new Date();
+    return await connection
+      .createQueryBuilder()
+      .select("post")
+      .from(Post, "post")
+      .orderBy("created_at", "DESC")
+      .take(Math.min(20, limit))
+      .where("post.created_at < :cursor", { cursor: timestamp })
+      .getMany();
   }
 
   @Query(() => Post, { nullable: true })

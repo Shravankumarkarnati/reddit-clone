@@ -14,7 +14,11 @@ import cors from "cors";
 
 createConnection()
   .then(async (connection) => {
-    await connection.runMigrations();
+    try {
+      await connection.runMigrations();
+    } catch (err) {
+      console.log("migration error", err);
+    }
     console.log("db connected");
     const app = express();
 
