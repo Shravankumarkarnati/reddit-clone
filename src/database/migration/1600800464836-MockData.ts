@@ -219,5 +219,5 @@ export class MockData1600800464836 implements MigrationInterface {
         `);
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {}
+  public async down(_: QueryRunner): Promise<void> {}
 }

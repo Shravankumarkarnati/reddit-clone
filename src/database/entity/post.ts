@@ -29,6 +29,7 @@ export class Post {
   @Column()
   postOwnerId!: Number;
 
+  // @Field(() => String)
   @ManyToOne(() => User, (user) => user.posts)
   postOwner!: User;
 

@@ -1,3 +1,4 @@
+import { User } from "./../../database/entity/user";
 import { MyContext } from "./../../utils/types/MyContext";
 import { isLoggedIn } from "./../../utils/middleware/isLoggedIn";
 import { Post } from "./../../database/entity/post";
@@ -5,11 +6,13 @@ import {
   Arg,
   Ctx,
   Field,
+  FieldResolver,
   InputType,
   Int,
   Mutation,
   Query,
   Resolver,
+  Root,
   UseMiddleware,
 } from "type-graphql";
 
@@ -21,23 +24,41 @@ export class PostInputType {
   post!: string;
 }
 
-@Resolver()
+@Resolver(Post)
 export class PostResolver {
+  @FieldResolver(() => String)
+  postSnippet(@Root() root: Post) {
+    return root.post.length > 50 ? `${root.post.slice(0, 50)}...` : root.post;
+  }
+
+  @FieldResolver(() => String)
+  async postOwnerUsername(
+    @Root() root: Post,
+    @Ctx() { connection }: MyContext
+  ) {
+    const ownerId = root.postOwnerId;
+    const username = await connection
+      .getRepository(User)
+      .findOne(ownerId as number);
+    return username?.username;
+  }
+
   @Query(() => [Post])
   async posts(
     @Arg("limit", () => Number) limit: number,
     @Ctx() { connection }: MyContext,
-    @Arg("cursor", { defaultValue: new Date() }) cursor?: string
+    @Arg("cursor", { nullable: true }) cursor?: string
   ): Promise<Post[]> {
-    const timestamp = cursor ? cursor : new Date();
-    return await connection
+    const query = connection
       .createQueryBuilder()
       .select("post")
       .from(Post, "post")
       .orderBy("created_at", "DESC")
-      .take(Math.min(20, limit))
-      .where("post.created_at < :cursor", { cursor: timestamp })
-      .getMany();
+      .take(Math.min(20, limit));
+    if (cursor) {
+      query.where("post.created_at <= :cursor", { cursor: cursor });
+    }
+    return query.getMany();
   }
 
   @Query(() => Post, { nullable: true })
