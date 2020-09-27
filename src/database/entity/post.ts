@@ -31,7 +31,7 @@ export class Post {
   @Column()
   postOwnerId!: Number;
 
-  // @Field(() => String)
+  @Field(() => User)
   @ManyToOne(() => User, (user) => user.posts)
   postOwner!: User;
 
@@ -39,7 +39,7 @@ export class Post {
   @Column({ default: 0 })
   points!: number;
 
-  // @Field(() => String)
+  // @Field(() => [typeof Vote])
   @OneToMany(() => Vote, (vote) => vote.post)
   votes: Vote[];
 

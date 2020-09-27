@@ -61,6 +61,15 @@ export class PostResolver {
     return username?.username;
   }
 
+  @FieldResolver(() => Number)
+  async voteStatus(@Root() root: Post, @Ctx() { connection, req }: MyContext) {
+    const postId = root.id;
+    const userId = req.session?.userId;
+    const voteRepo = connection.getRepository(Vote);
+    const voteStatus = await voteRepo.findOne({ userId, postId });
+    return voteStatus?.value || 0;
+  }
+
   @Query(() => PaginatedPosts)
   async posts(
     @Arg("limit", () => Number) limit: number,
@@ -144,37 +153,66 @@ export class PostResolver {
     @Arg("value", () => Int) value: number,
     @Ctx() { connection, req }: MyContext
   ): Promise<voteResult> {
-    const userId = parseInt(req.session!.userId);
-    const upVote = value > 0;
-    const realValue = upVote ? 1 : -1;
-
     const postRepo = connection.getRepository(Post);
     const voteRepo = connection.getRepository(Vote);
-    const newVote = {
-      userId,
-      postId,
-      value: realValue,
-    };
+    const userId = parseInt(req.session!.userId);
     const post = await postRepo.findOne(postId);
-    try {
-      if (post?.id) {
-        const newPoints = realValue + post.points;
-        post.points = newPoints;
+
+    if (post?.id) {
+      try {
+        const alreadyVoted = await voteRepo.findOne({ userId, postId });
+
+        let voteValue: number, makingZero: Boolean;
+
+        const magnitude = value > 0 ? 1 : -1;
+
+        if (alreadyVoted && alreadyVoted.value !== 0) {
+          makingZero = alreadyVoted.value === magnitude;
+          voteValue = makingZero ? -1 * magnitude : 2 * magnitude;
+        } else {
+          makingZero = false;
+          voteValue = magnitude;
+        }
+
+        const totalPoints = post.points + voteValue;
+
+        const thisVote = {
+          userId,
+          postId,
+          value: makingZero ? 0 : magnitude,
+        };
+        post.points = totalPoints;
         await postRepo.save(post);
-        await voteRepo.save(newVote);
+        await voteRepo.save(thisVote);
         return {
           success: true,
-          currentPoints: newPoints,
+          currentPoints: totalPoints,
         };
-      } else {
+      } catch (err) {
         return {
           success: false,
         };
       }
-    } catch (err) {
+    } else {
       return {
         success: false,
       };
     }
   }
 }
+
+/*
+  alreadyVoted && alreadyVoted.value !== 0{
+
+    alreadyVotedValue value           makingZero        voteValue    newValue  
+
+        1               -1    =>        false             -2            -1
+        1                1    =>        true              -1             0
+       -1               -1    =>        true              +1             0
+       -1                1    =>        false             +2             1
+  }else{
+
+        0               -1    =>        false             -1             -1
+        0                1    =>        false              +1            +1
+  }
+*/

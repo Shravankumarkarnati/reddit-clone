@@ -20,8 +20,6 @@ import { registerChecker } from "./../../utils/validations/checks";
 
 import { v4 as uuid } from "uuid";
 
-const Sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
 @InputType()
 export class detailsType {
   @Field()
@@ -155,6 +153,7 @@ export class UserResolver {
     @Arg("email") email: string,
     @Ctx() { redisClient, connection }: MyContext
   ): Promise<Boolean> {
+    // console.log("wut?");
     const userRepo = connection.getRepository(User);
     const user = await userRepo.findOne({ email: email });
     if (!user) return true;
