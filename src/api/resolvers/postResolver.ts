@@ -40,6 +40,8 @@ class voteResult {
   success!: Boolean;
   @Field(() => Number)
   currentPoints?: number;
+  @Field(() => Number)
+  currentStatus?: number;
 }
 
 @Resolver(Post)
@@ -64,10 +66,11 @@ export class PostResolver {
   @FieldResolver(() => Number)
   async voteStatus(@Root() root: Post, @Ctx() { connection, req }: MyContext) {
     const postId = root.id;
-    const userId = req.session?.userId;
+    const userId = parseInt(req.session!.userId);
     const voteRepo = connection.getRepository(Vote);
     const voteStatus = await voteRepo.findOne({ userId, postId });
-    return voteStatus?.value || 0;
+    const ret = voteStatus ? voteStatus.value : 0;
+    return ret;
   }
 
   @Query(() => PaginatedPosts)
@@ -187,6 +190,7 @@ export class PostResolver {
         return {
           success: true,
           currentPoints: totalPoints,
+          currentStatus: thisVote.value,
         };
       } catch (err) {
         return {
