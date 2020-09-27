@@ -34,6 +34,14 @@ class PaginatedPosts {
   hasMore: Boolean;
 }
 
+@ObjectType()
+class voteResult {
+  @Field(() => Boolean)
+  success!: Boolean;
+  @Field(() => Number)
+  currentPoints?: number;
+}
+
 @Resolver(Post)
 export class PostResolver {
   @FieldResolver(() => String)
@@ -129,13 +137,13 @@ export class PostResolver {
     return null;
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => voteResult)
   @UseMiddleware(isLoggedIn)
   async votePost(
     @Arg("postId", () => Int) postId: number,
     @Arg("value", () => Int) value: number,
     @Ctx() { connection, req }: MyContext
-  ) {
+  ): Promise<voteResult> {
     const userId = parseInt(req.session!.userId);
     const upVote = value > 0;
     const realValue = upVote ? 1 : -1;
@@ -148,11 +156,25 @@ export class PostResolver {
       value: realValue,
     };
     const post = await postRepo.findOne(postId);
-    if (post?.id) {
-      post.points = realValue + post.points;
-      await postRepo.save(post);
-      await voteRepo.save(newVote);
-      return true;
-    } else return false;
+    try {
+      if (post?.id) {
+        const newPoints = realValue + post.points;
+        post.points = newPoints;
+        await postRepo.save(post);
+        await voteRepo.save(newVote);
+        return {
+          success: true,
+          currentPoints: newPoints,
+        };
+      } else {
+        return {
+          success: false,
+        };
+      }
+    } catch (err) {
+      return {
+        success: false,
+      };
+    }
   }
 }
