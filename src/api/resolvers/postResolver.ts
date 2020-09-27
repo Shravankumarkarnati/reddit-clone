@@ -1,3 +1,4 @@
+import { Vote } from "./../../database/entity/vote";
 import { User } from "./../../database/entity/user";
 import { MyContext } from "./../../utils/types/MyContext";
 import { isLoggedIn } from "./../../utils/middleware/isLoggedIn";
@@ -10,6 +11,7 @@ import {
   InputType,
   Int,
   Mutation,
+  ObjectType,
   Query,
   Resolver,
   Root,
@@ -22,6 +24,14 @@ export class PostInputType {
   title!: string;
   @Field()
   post!: string;
+}
+
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts: Post[];
+  @Field(() => Boolean)
+  hasMore: Boolean;
 }
 
 @Resolver(Post)
@@ -43,22 +53,27 @@ export class PostResolver {
     return username?.username;
   }
 
-  @Query(() => [Post])
+  @Query(() => PaginatedPosts)
   async posts(
     @Arg("limit", () => Number) limit: number,
     @Ctx() { connection }: MyContext,
     @Arg("cursor", { nullable: true }) cursor?: string
-  ): Promise<Post[]> {
+  ): Promise<PaginatedPosts> {
+    const extra = Math.min(20, limit) + 1;
     const query = connection
       .createQueryBuilder()
       .select("post")
       .from(Post, "post")
       .orderBy("created_at", "DESC")
-      .take(Math.min(20, limit));
+      .take(extra);
     if (cursor) {
       query.where("post.created_at <= :cursor", { cursor: cursor });
     }
-    return query.getMany();
+    const allPosts = await query.getMany();
+    return {
+      hasMore: allPosts.length === extra,
+      posts: allPosts.slice(0, extra - 1),
+    };
   }
 
   @Query(() => Post, { nullable: true })
@@ -112,5 +127,32 @@ export class PostResolver {
       return true;
     }
     return null;
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isLoggedIn)
+  async votePost(
+    @Arg("postId", () => Int) postId: number,
+    @Arg("value", () => Int) value: number,
+    @Ctx() { connection, req }: MyContext
+  ) {
+    const userId = parseInt(req.session!.userId);
+    const upVote = value > 0;
+    const realValue = upVote ? 1 : -1;
+
+    const postRepo = connection.getRepository(Post);
+    const voteRepo = connection.getRepository(Vote);
+    const newVote = {
+      userId,
+      postId,
+      value: realValue,
+    };
+    const post = await postRepo.findOne(postId);
+    if (post?.id) {
+      post.points = realValue + post.points;
+      await postRepo.save(post);
+      await voteRepo.save(newVote);
+      return true;
+    } else return false;
   }
 }

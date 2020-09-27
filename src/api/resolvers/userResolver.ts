@@ -20,6 +20,8 @@ import { registerChecker } from "./../../utils/validations/checks";
 
 import { v4 as uuid } from "uuid";
 
+const Sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 @InputType()
 export class detailsType {
   @Field()

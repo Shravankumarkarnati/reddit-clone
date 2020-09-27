@@ -1,3 +1,4 @@
+import { Vote } from "./vote";
 import { User } from "../entity/user";
 import { Field, Int, ObjectType } from "type-graphql";
 import {
@@ -5,6 +6,7 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Timestamp,
   UpdateDateColumn,
@@ -35,7 +37,11 @@ export class Post {
 
   @Field(() => Number)
   @Column({ default: 0 })
-  points!: Number;
+  points!: number;
+
+  // @Field(() => String)
+  @OneToMany(() => Vote, (vote) => vote.post)
+  votes: Vote[];
 
   @Field(() => String)
   @CreateDateColumn({
