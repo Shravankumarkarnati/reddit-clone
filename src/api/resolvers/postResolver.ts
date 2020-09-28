@@ -67,6 +67,9 @@ export class PostResolver {
   async voteStatus(@Root() root: Post, @Ctx() { connection, req }: MyContext) {
     const postId = root.id;
     const userId = parseInt(req.session!.userId);
+    if (!userId) {
+      return 0;
+    }
     const voteRepo = connection.getRepository(Vote);
     const voteStatus = await voteRepo.findOne({ userId, postId });
     const ret = voteStatus ? voteStatus.value : 0;
@@ -120,33 +123,19 @@ export class PostResolver {
     return await postRepo.save(newPost);
   }
 
-  @Mutation(() => Post, { nullable: true })
-  async updatePost(
-    @Ctx() { connection }: MyContext,
-    @Arg("id", () => Int) id: number,
-    @Arg("title", () => String, { nullable: true }) title: String
-  ): Promise<Post | null> {
-    const postRepo = connection.getRepository(Post);
-    const post = await postRepo.findOne(id);
-    if (post) {
-      post.title = title;
-      return await postRepo.save(post);
-    }
-    return null;
-  }
-
   @Mutation(() => Boolean, { nullable: true })
+  @UseMiddleware(isLoggedIn)
   async deletePost(
-    @Ctx() { connection }: MyContext,
-    @Arg("id", () => Int) id: number
+    @Ctx() { connection, req }: MyContext,
+    @Arg("postId", () => Int) postId: number
   ): Promise<Boolean | null> {
     const postRepo = connection.getRepository(Post);
-    const post = await postRepo.findOne(id);
-    if (post) {
-      await postRepo.remove(post);
-      return true;
-    }
-    return null;
+    const post = await postRepo.findOne({ id: postId });
+    const userId = req.session?.userId;
+    if (!post?.id || !userId) return false;
+
+    await postRepo.remove(post);
+    return true;
   }
 
   @Mutation(() => voteResult)
@@ -202,6 +191,26 @@ export class PostResolver {
         success: false,
       };
     }
+  }
+
+  @Mutation(() => Post, { nullable: true })
+  @UseMiddleware(isLoggedIn)
+  async editPost(
+    @Ctx() { connection, req }: MyContext,
+    @Arg("postId", () => Int) postId: number,
+    @Arg("editedTitle", () => String, { nullable: true }) editedTitle?: string,
+    @Arg("editedPost", () => String, { nullable: true }) editedPost?: string
+  ): Promise<Post | null> {
+    const postRepo = connection.getRepository(Post);
+    const post = await postRepo.findOne({ id: postId });
+    const userId = req.session?.userId;
+    if (!userId || !post) {
+      return null;
+    }
+    if (editedTitle) post.title = editedTitle;
+    if (editedPost) post.post = editedPost;
+    const newPost = await postRepo.save(post);
+    return newPost;
   }
 }
 
