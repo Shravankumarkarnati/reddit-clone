@@ -1,3 +1,4 @@
 node_modules
-ormconfig.ts
+ormconfig_prod.ts
 dist
+.env_prod

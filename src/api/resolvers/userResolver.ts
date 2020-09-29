@@ -153,12 +153,11 @@ export class UserResolver {
     @Arg("email") email: string,
     @Ctx() { redisClient, connection }: MyContext
   ): Promise<Boolean> {
-    // console.log("wut?");
     const userRepo = connection.getRepository(User);
     const user = await userRepo.findOne({ email: email });
     if (!user) return true;
     const token = uuid();
-    const uri = `http://localhost:3000/resetpassword/${token}`;
+    const uri = `${process.env.CORS_ORIGIN}/resetpassword/${token}`;
     await redisClient.set(
       `forgot-password:${token}`,
       user.id,

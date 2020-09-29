@@ -1,5 +1,4 @@
 import { Vote } from "./../../database/entity/vote";
-import { User } from "./../../database/entity/user";
 import { MyContext } from "./../../utils/types/MyContext";
 import { isLoggedIn } from "./../../utils/middleware/isLoggedIn";
 import { Post } from "./../../database/entity/post";
@@ -54,26 +53,23 @@ export class PostResolver {
   @FieldResolver(() => String)
   async postOwnerUsername(
     @Root() root: Post,
-    @Ctx() { connection }: MyContext
+    @Ctx() { userLoader }: MyContext
   ) {
     const ownerId = root.postOwnerId;
-    const username = await connection
-      .getRepository(User)
-      .findOne(ownerId as number);
-    return username?.username;
+    return userLoader.load(ownerId);
   }
 
   @FieldResolver(() => Number)
-  async voteStatus(@Root() root: Post, @Ctx() { connection, req }: MyContext) {
+  async voteStatus(
+    @Root() root: Post,
+    @Ctx() { req, voteStatusLoader }: MyContext
+  ) {
     const postId = root.id;
     const userId = parseInt(req.session!.userId);
     if (!userId) {
       return 0;
     }
-    const voteRepo = connection.getRepository(Vote);
-    const voteStatus = await voteRepo.findOne({ userId, postId });
-    const ret = voteStatus ? voteStatus.value : 0;
-    return ret;
+    return voteStatusLoader.load({ postId, userId });
   }
 
   @Query(() => PaginatedPosts)
