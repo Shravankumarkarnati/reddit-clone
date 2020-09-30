@@ -12,7 +12,7 @@ import { HelloResolver } from "./api/resolvers/helloResolver";
 import { PostResolver } from "./api/resolvers/postResolver";
 import { UserResolver } from "./api/resolvers/userResolver";
 import { dataLoader } from "./utils/middleware/dataLoader";
-require("dotenv-safe").config();
+require("dotenv").config();
 
 createConnection()
   .then(async (connection) => {
@@ -25,15 +25,14 @@ createConnection()
     const app = express();
 
     const RedisStore = redisConnect(session);
-    const redisClient = new Redis(process.env.REDIS_DB_URL);
-
+    const redisClient = new Redis();
+    if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
     app.use(
       cors({
         origin: process.env.CORS_ORIGIN,
         credentials: true,
       })
     );
-
     app.use(morgan("combined"));
 
     app.use(
@@ -46,11 +45,8 @@ createConnection()
           maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
           sameSite: "lax",
           httpOnly: true,
-          secure: process.env.node_env === "PRODUCTION",
-          domain:
-            process.env.node_env === "PRODUCTION"
-              ? process.env.CORS_ORIGIN
-              : undefined,
+          secure: process.env.NODE_ENV === "PRODUCTION",
+          domain: process.env.COOKIE_DOMAIN,
         },
         saveUninitialized: false,
       })

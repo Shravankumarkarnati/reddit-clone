@@ -17,7 +17,7 @@ COPY . .
 
 COPY .env_prod .env
 
-COPY .ormconfig_prod.ts .ormconfig.ts
+COPY ormconfig_prod.ts ormconfig.ts
 
 RUN npm run build 
 
