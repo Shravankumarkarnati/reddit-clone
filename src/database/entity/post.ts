@@ -46,16 +46,16 @@ export class Post {
   @Field(() => String)
   @CreateDateColumn({
     name: "created_at",
-    type: "timestamp",
-    default: () => "CURRENT_TIMESTAMP",
+    type: "timestamp with time zone",
+    default: () => "(now() at time zone 'utc')",
   })
   "created_at": Timestamp;
 
   @Field(() => String)
   @UpdateDateColumn({
     name: "updated_at",
-    type: "timestamp",
-    default: () => "CURRENT_TIMESTAMP",
+    type: "timestamp with time zone",
+    default: () => "(now() at time zone 'utc')",
   })
   "updated_at": Timestamp;
 }

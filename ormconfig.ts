@@ -4,7 +4,7 @@ module.exports = {
   port: 5432,
   username: "postgres",
   password: "95050",
-  database: "reddit",
+  database: "devrant",
   synchronize: false,
   logging: true,
   entities: ["dist/database/entity/*.js"],

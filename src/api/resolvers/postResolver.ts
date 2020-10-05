@@ -76,8 +76,10 @@ export class PostResolver {
   async posts(
     @Arg("limit", () => Number) limit: number,
     @Ctx() { connection }: MyContext,
-    @Arg("cursor", { nullable: true }) cursor?: string
+    @Arg("cursor", { nullable: true }) cursor?: string,
+    @Arg("id", { nullable: true }) id?: number
   ): Promise<PaginatedPosts> {
+    const c_id = id ? id : 100000000;
     const extra = Math.min(20, limit) + 1;
     const query = connection
       .createQueryBuilder()
@@ -86,7 +88,13 @@ export class PostResolver {
       .orderBy("created_at", "DESC")
       .take(extra);
     if (cursor) {
-      query.where("post.created_at <= :cursor", { cursor: cursor });
+      query.where(
+        "extract(epoch from post.created_at) <= :cursor and id < :id",
+        {
+          cursor: parseInt(cursor),
+          id: c_id,
+        }
+      );
     }
     const allPosts = await query.getMany();
     return {

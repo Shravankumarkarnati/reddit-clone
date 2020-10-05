@@ -1,7 +1,7 @@
 import { Connection } from "typeorm";
-import { UserResponse, detailsType } from "./../../api/resolvers/userResolver";
 import { User } from "../../database/entity/user";
-import { usernameValid, passwordValid, validationErrorCodes } from "./helpers";
+import { detailsType, UserResponse } from "./../../api/resolvers/userResolver";
+import { validationErrorCodes } from "./helpers";
 
 export const registerChecker = async (
   connection: Connection,
@@ -34,7 +34,33 @@ export const registerChecker = async (
       ],
     };
   }
-  if (!usernameValid(details.username)) {
+  //// Strong Validations //// CODE START
+
+  // if (!usernameValid(details.username)) {
+  //   return {
+  //     error: [
+  //       {
+  //         property: "username",
+  //         errorCode: validationErrorCodes.usernameFormatError,
+  //       },
+  //     ],
+  //   };
+  // }
+
+  // if (!passwordValid(details.password)) {
+  //   return {
+  //     error: [
+  //       {
+  //         property: "password",
+  //         errorCode: validationErrorCodes.passwordFormatError,
+  //       },
+  //     ],
+  //   };
+  // }
+
+  //// Strong Validations //// CODE END
+
+  if (details.username.length < 5) {
     return {
       error: [
         {
@@ -45,7 +71,7 @@ export const registerChecker = async (
     };
   }
 
-  if (!passwordValid(details.password)) {
+  if (details.password.length < 8) {
     return {
       error: [
         {

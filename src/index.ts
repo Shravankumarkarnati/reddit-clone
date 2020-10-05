@@ -25,7 +25,10 @@ createConnection()
     const app = express();
 
     const RedisStore = redisConnect(session);
-    const redisClient = new Redis();
+    const redisClient =
+      process.env.NODE_ENV === "production"
+        ? new Redis(process.env.REDIS_URL)
+        : new Redis();
     if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
     app.use(
       cors({
@@ -33,7 +36,7 @@ createConnection()
         credentials: true,
       })
     );
-    app.use(morgan("combined"));
+    if (process.env.NODE_ENV === "production") app.use(morgan("combined"));
 
     app.use(
       session({
@@ -46,7 +49,10 @@ createConnection()
           sameSite: "lax",
           httpOnly: true,
           secure: process.env.NODE_ENV === "PRODUCTION",
-          domain: process.env.COOKIE_DOMAIN,
+          domain:
+            process.env.NODE_ENV === "PRODUCTION"
+              ? process.env.COOKIE_DOMAIN
+              : "",
         },
         saveUninitialized: false,
       })
