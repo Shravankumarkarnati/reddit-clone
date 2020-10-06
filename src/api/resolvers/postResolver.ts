@@ -31,6 +31,8 @@ class PaginatedPosts {
   posts: Post[];
   @Field(() => Boolean)
   hasMore: Boolean;
+  @Field(() => Number)
+  cursor: number;
 }
 
 @ObjectType()
@@ -76,10 +78,8 @@ export class PostResolver {
   async posts(
     @Arg("limit", () => Number) limit: number,
     @Ctx() { connection }: MyContext,
-    @Arg("cursor", { nullable: true }) cursor?: string,
-    @Arg("id", { nullable: true }) id?: number
+    @Arg("cursor", { nullable: true }) cursor?: string
   ): Promise<PaginatedPosts> {
-    const c_id = id ? id : 100000000;
     const extra = Math.min(20, limit) + 1;
     const query = connection
       .createQueryBuilder()
@@ -88,18 +88,15 @@ export class PostResolver {
       .orderBy("created_at", "DESC")
       .take(extra);
     if (cursor) {
-      query.where(
-        "extract(epoch from post.created_at) <= :cursor and id < :id",
-        {
-          cursor: parseInt(cursor),
-          id: c_id,
-        }
-      );
+      query.where("cursor <= :cursor ", {
+        cursor: parseInt(cursor),
+      });
     }
     const allPosts = await query.getMany();
     return {
       hasMore: allPosts.length === extra,
       posts: allPosts.slice(0, extra - 1),
+      cursor: allPosts[allPosts.length - 1].cursor,
     };
   }
 

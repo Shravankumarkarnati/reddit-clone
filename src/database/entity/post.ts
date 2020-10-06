@@ -58,4 +58,11 @@ export class Post {
     default: () => "(now() at time zone 'utc')",
   })
   "updated_at": Timestamp;
+
+  @Field(() => Number)
+  @Column({
+    name: "cursor",
+    type: "bigint",
+  })
+  "cursor": number;
 }

@@ -1,5 +1,3 @@
-import { Vote } from "./vote";
-import { Post } from "./post";
 import { Field, Int, ObjectType } from "type-graphql";
 import {
   Column,
@@ -10,6 +8,8 @@ import {
   Timestamp,
   UpdateDateColumn,
 } from "typeorm";
+import { Post } from "./post";
+import { Vote } from "./vote";
 
 @ObjectType()
 @Entity()
@@ -43,7 +43,7 @@ export class User {
     type: "timestamp with time zone",
     default: () => "(now() at time zone 'utc')",
   })
-  "created_at"!: Timestamp;
+  "created_at": Timestamp;
 
   @Field(() => String)
   @UpdateDateColumn({
@@ -51,5 +51,12 @@ export class User {
     type: "timestamp with time zone",
     default: () => "(now() at time zone 'utc')",
   })
-  "updated_at"!: Timestamp;
+  "updated_at": Timestamp;
+
+  @Field(() => Number)
+  @Column({
+    name: "cursor",
+    type: "bigint",
+  })
+  "cursor": number;
 }

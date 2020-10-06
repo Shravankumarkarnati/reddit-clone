@@ -12,12 +12,16 @@ import { HelloResolver } from "./api/resolvers/helloResolver";
 import { PostResolver } from "./api/resolvers/postResolver";
 import { UserResolver } from "./api/resolvers/userResolver";
 import { dataLoader } from "./utils/middleware/dataLoader";
+// import { genUserMockData } from "./utils/mockData/mockData";
+// import { genPostsMockData } from "./utils/mockData/mockData";
 require("dotenv").config();
 
 createConnection()
   .then(async (connection) => {
     try {
       await connection.runMigrations();
+      // await genUserMockData(connection);
+      // await genPostsMockData(connection);
     } catch (err) {
       console.log("migration error", err);
     }
