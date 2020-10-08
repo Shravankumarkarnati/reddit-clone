@@ -92,14 +92,18 @@ const UserData = [
 ];
 
 export const genUserMockData = (connection: Connection) => {
-  UserData.map(async (cur) => {
-    const userRepo = connection.getRepository(User);
-    const user = new User();
-    user.username = cur.username;
-    user.email = cur.email;
-    user.password = await argon2.hash(cur.password);
-    await userRepo.save(user);
-  });
+  try {
+    UserData.map(async (cur) => {
+      const userRepo = connection.getRepository(User);
+      const user = new User();
+      user.username = cur.username;
+      user.email = cur.email;
+      user.password = await argon2.hash(cur.password);
+      await userRepo.save(user);
+    });
+  } catch (err) {
+    console.log("User Data Error:", err.message);
+  }
 };
 
 const PostData = [
@@ -426,13 +430,17 @@ const PostData = [
 ];
 
 export const genPostsMockData = (connection: Connection) => {
-  PostData.map(async (cur) => {
-    const postRepo = connection.getRepository(Post);
-    const post = new Post();
-    post.title = cur.title;
-    post.post = cur.post;
-    post.postOwnerId = cur.postOwnerId;
-    post.created_at = new Date(parseInt(cur.created_at)).toUTCString() as any;
-    await postRepo.save(post);
-  });
+  try {
+    PostData.map(async (cur) => {
+      const postRepo = connection.getRepository(Post);
+      const post = new Post();
+      post.title = cur.title;
+      post.post = cur.post;
+      post.postOwnerId = cur.postOwnerId;
+      post.created_at = new Date(parseInt(cur.created_at)).toUTCString() as any;
+      await postRepo.save(post);
+    });
+  } catch (err) {
+    console.log("Post Data Error:", err.message);
+  }
 };
